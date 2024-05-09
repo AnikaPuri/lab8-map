@@ -171,8 +171,13 @@
         Filter by time:
         <input type="range" min="-1" max="1440" id="time-range" bind:value={timeFilter}/>
     </label>
-    <time id="selected-time" style="display: block;">{timeFilterLabel}</time>
-    <em id="any-time" style="display: block;"><i>(any time)</i></em>
+    <div class="time">
+        {#if timeFilter === -1}
+            <em id="any-time" style="display: block;"><i>(any time)</i></em>
+        {:else}
+            <time id="selected-time" style="display: block;">{timeFilterLabel}</time>
+        {/if}
+    </div>
 
 </header>
 
@@ -253,6 +258,10 @@ circle {
         var(--color-arrivals)
     );
     fill: var(--color);
+}
+
+.time{
+
 }
 
 </style>
