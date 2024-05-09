@@ -117,7 +117,10 @@
 
     $: radiusScale = d3.scaleSqrt()
 	.domain([0, d3.max(stations, d => d.totalTraffic)])
-	.range(timeFilter === -1 ? [0, 25] : [3, 50]);
+	.range([0,25]);
+    //timeFilter === -1 ? [0, 25] : [3, 50]
+
+    $: console.log("radiusScale", radiusScale)
 
 
     let timeFilter = -1;
@@ -143,14 +146,19 @@
     $: filteredStations = timeFilter === -1? stations : stations.map(station => {
         station = {...station};
 
-        station.arrivals = filteredArrivals;
-        station.departures = filteredDepartures;
+        let id = station.Number;
+
+        station.arrivals = filteredArrivals.get(id) ?? 0;
+        station.departures = filteredDepartures.get(id) ?? 0;
         station.totalTraffic = station.arrivals + station.departures;
 
         return station
 
     });
-    $: console.log(filteredStations)
+
+    let stationFlow = d3.scaleQuantize()
+	.domain([0, 1])
+	.range([0, 0.5, 1]);
 
 </script>
 
@@ -177,18 +185,50 @@
                 <!-- Draw each station circle using the getCoords function -->
                 <circle cx={ getCoords(station).cx }
                 cy={ getCoords(station).cy }
-                r={radiusScale(station.totalTraffic)} fill="steelblue" />
+                r={radiusScale(station.totalTraffic)} fill="steelblue" style="--departure-ratio: { stationFlow(station.departures / station.totalTraffic) }"/>
             {/each}
         {/key}
 
     </svg>
 </div>
 
+<div class="legend">
+	<div class = "legend-item departures" style="--departure-ratio: 1">More departures</div>
+	<div class ="legend-item balanced" style="--departure-ratio: 0.5">Balanced</div>
+	<div class="legend-item arrivals" style="--departure-ratio: 0">More arrivals</div>
+</div>
 
 <style>
 
 @import url("$lib/global.css");
 
+.legend {
+    display: flex;        /* Aligns items horizontally */
+    width: 100%;          /* Adjust as necessary */
+    border: 1px solid #ccc; /* Optional border around the entire legend */
+}
+
+/* Common styles for all legend items */
+.legend-item {
+    flex: 1;               /* Adjusts each item to fill the same proportion */
+    text-align: center;    /* Centers text horizontally */
+    padding: 10px;         /* Adds some padding */
+    color: white;          /* White text */
+    font-weight: bold;     /* Makes text bold */
+}
+
+/* Specific colors for each item */
+.departures {
+    background-color: #4379a1; /* Blue for departures */
+}
+
+.balanced {
+    background-color: #b482b4; /* Purple for balanced */
+}
+
+.arrivals {
+    background-color: #e5943e; /* Orange for arrivals */
+}
 
 #map {
 	flex: 1;
@@ -202,6 +242,17 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+}
+
+circle {
+    --color-departures: steelblue;
+    --color-arrivals: darkorange;
+    --color: color-mix(
+        in oklch,
+        var(--color-departures) calc(100% * var(--departure-ratio)),
+        var(--color-arrivals)
+    );
+    fill: var(--color);
 }
 
 </style>
